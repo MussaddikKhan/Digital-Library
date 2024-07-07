@@ -13,31 +13,14 @@ public class AuthorService {
     @Autowired
     private AuthorRepository authorRepository;
 
-    public void saveAuthor(Author author){
-        authorRepository.save(author);
+    public Author createOrGet(Author author){
+        Author authorFromDb = authorRepository.findByEmail(author.getEmail());
+        if(authorFromDb == null){
+            authorFromDb = authorRepository.save(author);
+        }
+       return  authorFromDb;
     }
-    public ResponseEntity<Optional<Author>> getAuthorById(Integer id){
-
-        Optional<Author> author =  authorRepository.findById(id);
-        if(author == null){
-            return ResponseEntity.notFound().build();
-        }
-        else{
-            return ResponseEntity.ok(author);
-        }
-
-    }
-    public void updateAuthor(Author author){
-//        authorRepository.updateAuthor(author);
-    }
-    public ResponseEntity<Optional<Author>> deleteAuthorById(Integer id){
-        Optional<Author> author =  authorRepository.findById(id);
-        if(author == null){
-            return ResponseEntity.notFound().build();
-        }
-        else{
-            authorRepository.deleteById(id);
-            return ResponseEntity.ok(author);
-        }
+    public  Author getAuthor(String email){
+        return authorRepository.findByEmail(email);
     }
 }

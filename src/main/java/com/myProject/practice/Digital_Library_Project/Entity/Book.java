@@ -2,47 +2,48 @@ package com.myProject.practice.Digital_Library_Project.Entity;
 
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+
 @Entity
-@Table(name = "Book")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
 @ToString
+@Builder
+@JsonIgnoreProperties({"student","transactions"})
 public class Book {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private  Integer id;
+
     private String name;
 
-    private Integer number_Of_Pages;
-
     private String language;
-    private  boolean isAvailable;
-
     @Enumerated(EnumType.STRING)
     private  Genre genre;
-    private String ISBN;
-    @Temporal(TemporalType.DATE)
-    private Date published_Date;
     @CreationTimestamp
     private  Date createdOn;
     @UpdateTimestamp
     private  Date updatedOn;
-    @ManyToOne(cascade = CascadeType.ALL,fetch = FetchType.LAZY)
-    @JoinColumn(name = "author_id")
+
+    @ManyToOne
+    @JoinColumn
+    @JsonIgnoreProperties("books")
     private  Author author;
 
-    @ManyToOne(cascade = CascadeType.ALL,fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn
-    private  Card cards;
+    private  Student student;
 
-    @OneToMany(mappedBy = "book", cascade =  CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Transaction>transactions; 
+    @OneToMany(mappedBy = "book")
+    private List<Transaction>transactions;
 }

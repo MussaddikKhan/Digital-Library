@@ -6,6 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.util.Date;
+import java.util.List;
 
 @Getter
 @Setter
@@ -13,23 +14,30 @@ import java.util.Date;
 @NoArgsConstructor
 @ToString
 @Entity
-@Table(name = "Student")
+@Builder
 public class Student {
     @Id
     @GeneratedValue(strategy =  GenerationType.IDENTITY)
     private Integer id;
-    private Integer age;
     private String name;
-    private String country;
+    private  Integer age;
     @Column(unique = true)
     private  String email;
+
+    @Column(unique = true, nullable = false)
+    private  String rollNo;
+    
+    @Column(unique = true)
     private String phone_Number;
+
     @CreationTimestamp
     private Date createdOn;
     @UpdateTimestamp
     private  Date updatedOn;
 
-    @OneToOne(mappedBy = "student",cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private  Card card;
-    
+    @OneToMany(mappedBy ="student")
+    List<Book>bookList;
+    @OneToMany(mappedBy = "student")
+    List<Transaction>transactions;
+
 }

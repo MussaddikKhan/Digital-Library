@@ -1,12 +1,14 @@
 package com.myProject.practice.Digital_Library_Project.Controller;
 
-import com.myProject.practice.Digital_Library_Project.Entity.Student;
+import com.myProject.practice.Digital_Library_Project.Dto.*;
 import com.myProject.practice.Digital_Library_Project.Services.StudentService;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Optional;
+import jakarta.validation.Valid;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/student")
@@ -15,18 +17,29 @@ public class StudentController {
     StudentService studentService;
 
     @PostMapping("/create")
-    public Student createStudent(@RequestBody Student student){
+    public ReturnStudentResponse createStudent(@Valid @RequestBody CreateStudentRequest student){
         return studentService.createStudent(student);
     }
-
-    @GetMapping("/find/{id}")
-    public ResponseEntity<Optional<Student>>findById(@PathVariable Integer id){
-        return studentService.findById(id);
+    @GetMapping("/find/{rollNo}")
+    public  ReturnStudentResponse findStudentByRollNo(@PathVariable String rollNo){
+        return studentService.getByRollNumber(rollNo);
     }
 
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<Optional<Student>> deleteStudent(@PathVariable Integer id) throws Exception {
-        return studentService.deleteStudent(id);
+    @GetMapping("/books/{rollNo}")
+    public List<ReturnBookResponse> findBookByStudent(@PathVariable String rollNo){
+        return studentService.findBookByStudent(rollNo);
     }
+    @GetMapping("/transactions/{rollNo}")
+    public  List<ReturnTransactionResponse> getAllTransaction(@PathVariable String rollNo){
+        return studentService.getAllTransaction(rollNo);
+    }
+
+    @PatchMapping("/update/{rollNo}")
+    public  String updateStudent(@PathVariable String rollNo , @RequestBody UpdateStudentRequest updateStudentRequest){
+        return studentService.updateStudent(rollNo , updateStudentRequest);
+    }
+
+
+    
 }
 

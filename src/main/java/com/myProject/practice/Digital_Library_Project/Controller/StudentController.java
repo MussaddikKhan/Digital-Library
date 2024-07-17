@@ -1,9 +1,13 @@
 package com.myProject.practice.Digital_Library_Project.Controller;
 
 import com.myProject.practice.Digital_Library_Project.Dto.*;
+import com.myProject.practice.Digital_Library_Project.Entity.Student;
+import com.myProject.practice.Digital_Library_Project.Entity.User;
 import com.myProject.practice.Digital_Library_Project.Services.StudentService;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -24,22 +28,34 @@ public class StudentController {
     public  ReturnStudentResponse findStudentByRollNo(@PathVariable String rollNo){
         return studentService.getByRollNumber(rollNo);
     }
+    @GetMapping("/get")
+    public Student getStudent(){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User securedUser = (User) authentication.getPrincipal();
+        int studentId = securedUser.getStudent().getId();
+        return studentService.getById(studentId);
+    }
 
-    @GetMapping("/books/{rollNo}")
-    public List<ReturnBookResponse> findBookByStudent(@PathVariable String rollNo){
+    @GetMapping("/books")
+    public List<ReturnBookResponse> findBookByStudent(){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User securedUser = (User) authentication.getPrincipal();
+        String rollNo = securedUser.getStudent().getRollNo();
         return studentService.findBookByStudent(rollNo);
     }
-    @GetMapping("/transactions/{rollNo}")
-    public  List<ReturnTransactionResponse> getAllTransaction(@PathVariable String rollNo){
+    @GetMapping("/transactions")
+    public  List<ReturnTransactionResponse> getAllTransaction(){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User securedUser = (User) authentication.getPrincipal();
+        String rollNo = securedUser.getStudent().getRollNo();
         return studentService.getAllTransaction(rollNo);
     }
-
-    @PatchMapping("/update/{rollNo}")
-    public  String updateStudent(@PathVariable String rollNo , @RequestBody UpdateStudentRequest updateStudentRequest){
+    @PatchMapping("/update")
+    public  String updateStudent( @RequestBody UpdateStudentRequest updateStudentRequest){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User securedUser = (User) authentication.getPrincipal();
+        String rollNo = securedUser.getStudent().getRollNo();
         return studentService.updateStudent(rollNo , updateStudentRequest);
     }
-
-
-    
 }
 

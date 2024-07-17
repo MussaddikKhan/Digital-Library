@@ -16,6 +16,9 @@ import java.util.UUID;
 public class CreateStudentRequest {
     @NotBlank
     private String name;
+    @NotBlank
+    private  String username;
+    private  String password;
     @Email
     private String email;
 
@@ -27,6 +30,8 @@ public class CreateStudentRequest {
     private String mobile;
     public Student to(){
         return Student.builder()
+                .username(this.username)
+                .password(this.password)
                 .name(this.name)
                 .email(this.email)
                 .age(this.age)

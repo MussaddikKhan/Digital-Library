@@ -22,12 +22,12 @@ public class TransactionController {
         return  transactionService.transact(createTransactionRequest);
     }
 
-    @GetMapping("/get/{id}")
+    @GetMapping("/get/txn/{id}")
     public  Transaction getTxnById(@PathVariable  String id){
         return transactionService.getTxnById(id);
     }
 
-    @GetMapping("/get")
+    @GetMapping("/get/status")
     public List<ReturnTransactionResponse> returnTransactionByStatus(@RequestParam TransactionStatus transactionStatus){
         return transactionService.returnTransactionByStatus(transactionStatus);
     }
@@ -41,8 +41,7 @@ public class TransactionController {
     public  List<ReturnBookResponse> getBookByTxnType(@RequestParam TransactionType transactionType){
         return  transactionService.getBookByTxnType(transactionType);
     }
-
-    @GetMapping("/getStudentsWithOverdue/")
+    @GetMapping("/getStudentsWithOverdue")
     public  List<ReturnStudentWithOverDueResponse> getStudentsWithOverDue(){
         return   transactionService.getStudentsWithOverDue();
     }

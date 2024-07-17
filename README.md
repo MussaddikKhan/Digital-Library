@@ -47,7 +47,7 @@ Welcome to the Library Management Project! This project is designed to manage li
         - Identify students with overdue books
 
 ### Pending Work
-- **Security**: Adding authentication and authorization to secure the application. (Completed)
+- **Security**: Adding authentication and authorization to secure the application. **(Done ✅)**
 - **Unit Testing**: Implementing unit tests to ensure the reliability of the application.(One Service Done)
 
 ## Getting Started

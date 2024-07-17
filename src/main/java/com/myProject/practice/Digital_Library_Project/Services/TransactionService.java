@@ -2,6 +2,8 @@ package com.myProject.practice.Digital_Library_Project.Services;
 
 import com.myProject.practice.Digital_Library_Project.Dto.*;
 import com.myProject.practice.Digital_Library_Project.Entity.*;
+import com.myProject.practice.Digital_Library_Project.Exceptions.BookAlreadyIssued;
+import com.myProject.practice.Digital_Library_Project.Exceptions.BookLimitExceed;
 import com.myProject.practice.Digital_Library_Project.Repository.TransactionRepository;
 import org.hibernate.annotations.CurrentTimestamp;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +20,7 @@ import java.util.stream.Collectors;
 @Service
 public class TransactionService {
     @Value("${books.max_allowed}")
-    Integer maxBookAllowed;
+    int maxBookAllowed;
 
     @Value("${book.fine.per_day}")
     Double finePerDay;
@@ -53,7 +55,7 @@ public class TransactionService {
     }
 
     /** Issue Book  */
-    private String issueBook(Student student, Book book, TransactionType transactionType) throws Exception {
+    public String issueBook(Student student, Book book, TransactionType transactionType) throws Exception {
         /**
          * 1. create an entry in the txn table with the status as pending : acknowledging that we have received the request to issue
          * 2. whether book is available or not ?
@@ -71,25 +73,23 @@ public class TransactionService {
         this.transactionRepository.save(t);
         try{
             if(book.getStudent() != null){
-                throw new Exception("Book is already Issued by Another Student");
+                throw new BookAlreadyIssued("Book is already Issued by Another Student");
             }
-            if(student.getBookList() != null && student.getBookList().size() == maxBookAllowed)  {
-                throw new Exception("Student has already issued maximum number of books");
+            if(student.getBookList() != null && student.getBookList().size() >= maxBookAllowed)  {
+                throw new BookLimitExceed("Student has already issued maximum number of books");
             }
             bookService.updateBookById(book.getId(),student);
             t.setTransactionStatus(TransactionStatus.SUCESSFULL);
-            transactionRepository.save(t);
 
         }catch (Exception e){
             t.setTransactionStatus(TransactionStatus.FAILED);
-            transactionRepository.save(t);
             throw e;
         }
-        return t.getExternalTxnId();
+        return transactionRepository.save(t).getExternalTxnId();
     }
 
     /** Return Book  */
-    private String returnBook(Student student, Book book, TransactionType transactionType) {
+    public String returnBook(Student student, Book book, TransactionType transactionType) {
         /**
          * /**
          *          * 1. create an entry in the txn table with the status as pending : acknowledging that we have received the request to issue
@@ -119,18 +119,18 @@ public class TransactionService {
             bookService.updateBookById(book.getId(), null);
             t.setFine(fineAmount);
             t.setTransactionStatus(TransactionStatus.SUCESSFULL);
-            transactionRepository.save(t);
+
         }
         catch (Exception e){
             t.setTransactionStatus(TransactionStatus.FAILED);
-            transactionRepository.save(t);
+
         }
-        return t.getExternalTxnId();
+        return   transactionRepository.save(t).getExternalTxnId();
     }
 
 
     /**  Evaluate Fine */
-    private double getFine(Date issuDate, Date returnDate) {
+    public double getFine(Date issuDate, Date returnDate) {
         long timeDiffMillis = Math.abs(issuDate.getTime() - returnDate.getTime());
         long daysPassed = TimeUnit.DAYS.convert(timeDiffMillis, TimeUnit.MILLISECONDS);
         Double fine = 0.0;

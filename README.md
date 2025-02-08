@@ -48,6 +48,7 @@ Welcome to the Library Management Project! This project is designed to manage li
 
 ### Pending Work
 - **Security**: Adding authentication and authorization to secure the application. **(Done ✅)**
+- **Cache**: Adding A Reddis Cache For Retriving Book Details by it's name. **(Done ✅)**
 - **Unit Testing**: Implementing unit tests to ensure the reliability of the application.(One Service Done)
 
 ## Getting Started

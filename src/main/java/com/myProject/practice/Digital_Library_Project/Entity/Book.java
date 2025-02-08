@@ -1,5 +1,6 @@
 package com.myProject.practice.Digital_Library_Project.Entity;
 
+import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -20,7 +21,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 @ToString
 @Builder
 @JsonIgnoreProperties({"student","transactions"})
-public class Book {
+
+public class Book implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private  Integer id;

@@ -3,14 +3,13 @@ package com.myProject.practice.Digital_Library_Project.Services;
 import com.myProject.practice.Digital_Library_Project.Dto.*;
 import com.myProject.practice.Digital_Library_Project.Entity.*;
 import com.myProject.practice.Digital_Library_Project.Exceptions.BookAlreadyIssued;
+import com.myProject.practice.Digital_Library_Project.Exceptions.BookIssuedAnotherStudentException;
 import com.myProject.practice.Digital_Library_Project.Exceptions.BookLimitExceed;
 import com.myProject.practice.Digital_Library_Project.Repository.TransactionRepository;
-import org.hibernate.annotations.CurrentTimestamp;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -19,14 +18,14 @@ import java.util.stream.Collectors;
 
 @Service
 public class TransactionService {
-    @Value("${books.max_allowed}")
-    int maxBookAllowed;
+    //    @Value("${books.max_allowed}")
+    int maxBookAllowed = 3;
 
-    @Value("${book.fine.per_day}")
-    Double finePerDay;
+    //    @Value("${book.fine.per_day}")
+    Double finePerDay = 1.0;
 
-    @Value("${books.max_days_allowed}")
-    Integer maxDay;
+    //    @Value("${books.max_days_allowed}")
+    int maxDay = 7;
     @Autowired
     TransactionRepository transactionRepository;
     @Autowired
@@ -34,8 +33,10 @@ public class TransactionService {
     @Autowired
     BookService bookService;
 
-    /** Get Transaction By ID */
-    public  Transaction getTxnById(String ExtTxnId){
+    /**
+     * Get Transaction By ID
+     */
+    public Transaction getTxnById(String ExtTxnId) {
         return transactionRepository.findByExternalTxnId(ExtTxnId);
     }
 
@@ -44,7 +45,6 @@ public class TransactionService {
         TransactionType transactionType = createTransactionRequest.getTransactionType();
         Student student = studentService.getById(createTransactionRequest.getStudentId());
         Book book = bookService.getBookById(createTransactionRequest.getBookId());
-
         if (transactionType == TransactionType.ISSUE) {
             return issueBook(student, book, transactionType);
         } else if (transactionType == TransactionType.RETURN) {
@@ -54,7 +54,9 @@ public class TransactionService {
         }
     }
 
-    /** Issue Book  */
+    /**
+     * Issue Book
+     */
     public String issueBook(Student student, Book book, TransactionType transactionType) throws Exception {
         /**
          * 1. create an entry in the txn table with the status as pending : acknowledging that we have received the request to issue
@@ -71,25 +73,27 @@ public class TransactionService {
                 .student(student)
                 .build();
         this.transactionRepository.save(t);
-        try{
-            if(book.getStudent() != null){
+        try {
+            if (book.getStudent() != null) {
                 throw new BookAlreadyIssued("Book is already Issued by Another Student");
             }
-            if(student.getBookList() != null && student.getBookList().size() >= maxBookAllowed)  {
+            if (student.getBookList() != null && student.getBookList().size() >= maxBookAllowed) {
                 throw new BookLimitExceed("Student has already issued maximum number of books");
             }
-            bookService.updateBookById(book.getId(),student);
+            bookService.updateBookById(book.getId(), student);
             t.setTransactionStatus(TransactionStatus.SUCESSFULL);
 
-        }catch (Exception e){
+        } catch (Exception e) {
             t.setTransactionStatus(TransactionStatus.FAILED);
             throw e;
         }
         return transactionRepository.save(t).getExternalTxnId();
     }
 
-    /** Return Book  */
-    public String returnBook(Student student, Book book, TransactionType transactionType) {
+    /**
+     * Return Book
+     */
+    public String returnBook(Student student, Book book, TransactionType transactionType) throws Exception {
         /**
          * /**
          *          * 1. create an entry in the txn table with the status as pending : acknowledging that we have received the request to issue
@@ -106,69 +110,84 @@ public class TransactionService {
                 .externalTxnId(UUID.randomUUID().toString())
                 .student(student)
                 .build();
-        this.transactionRepository.save(t);
-        try{
-            if(book.getStudent() != null && book.getStudent().getId() != student.getId()){
-                throw new Exception("Book is Not Issue to this Student");
+//        this.transactionRepository.save(t);
+        try {
+            if (book.getStudent() != null && book.getStudent().getId() != student.getId()) {
+                throw new BookIssuedAnotherStudentException("Book is Not Issue to this Student");
             }
 
             Transaction txn = transactionRepository.findTopByBookAndStudentAndTransactionTypeAndTransactionStatusOrderByIdDesc(book, student, TransactionType.ISSUE, TransactionStatus.SUCESSFULL);
             Date issuDate = txn.getCreatedOn();
-            Date returnDate = t.getCreatedOn();
+            Date returnDate = new Date();
             double fineAmount = getFine(issuDate, returnDate);
-            bookService.updateBookById(book.getId(), null);
+            bookService.updateBookById(book.getId(), student);
             t.setFine(fineAmount);
             t.setTransactionStatus(TransactionStatus.SUCESSFULL);
 
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             t.setTransactionStatus(TransactionStatus.FAILED);
-
+            throw e;
         }
-        return   transactionRepository.save(t).getExternalTxnId();
+        return transactionRepository.save(t).getExternalTxnId();
     }
 
 
-    /**  Evaluate Fine */
+    /**
+     * Evaluate Fine
+     */
     public double getFine(Date issuDate, Date returnDate) {
         long timeDiffMillis = Math.abs(issuDate.getTime() - returnDate.getTime());
         long daysPassed = TimeUnit.DAYS.convert(timeDiffMillis, TimeUnit.MILLISECONDS);
         Double fine = 0.0;
-        if(daysPassed > maxDay){
+        if (daysPassed > maxDay) {
             fine = (daysPassed - maxDay) * finePerDay;
         }
-        return fine; 
+        return fine;
     }
 
-    /** Get Transaction By Status */
+    /**
+     * Get Transaction By Status
+     */
     public List<ReturnTransactionResponse> returnTransactionByStatus(TransactionStatus transactionStatus) {
-        return transactionRepository.findByTransactionStatus(transactionStatus).stream().map(txn -> ReturnTransactionResponse.From(txn)).collect(Collectors.toList());
+        return transactionRepository.findByTransactionStatus(transactionStatus)
+                .stream().
+                map(txn -> ReturnTransactionResponse.From(txn))
+                .collect(Collectors.toList());
     }
 
-    /** Get Transaction By Type*/
+    /**
+     * Get Transaction By Type
+     */
     public List<ReturnTransactionResponse> returnTransactionByType(TransactionType transactionType) {
-        return transactionRepository.findByTransactionType(transactionType).stream().map(txn -> ReturnTransactionResponse.From(txn)).collect(Collectors.toList());
+        return transactionRepository.findByTransactionType(transactionType)
+                .stream()
+                .map(txn -> ReturnTransactionResponse.From(txn))
+                .collect(Collectors.toList());
     }
 
-    /** Get Books By Type */
+    /**
+     * Get Books By Type
+     */
     public List<ReturnBookResponse> getBookByTxnType(TransactionType transactionType) {
         List<Book> bookList = transactionRepository.findByTransactionType(transactionType).stream().map(txn -> txn.getBook()).collect(Collectors.toList());
         return bookList.stream().map(book -> ReturnBookResponse.from(book)).collect(Collectors.toList());
     }
 
-    /** Get Student who OverDue The Transaction */
+    /**
+     * Get Student who OverDue The Transaction
+     */
     public List<ReturnStudentWithOverDueResponse> getStudentsWithOverDue() {
- /**
-  *  1. Find All the Transactions
-  *  2. Filter The Transaction with currDate - issueDate is >= due Date if we find
-  *  3. Return the List Of Student Fine Response with Student Name , roll Number, bookName , Fine
-  *  4. Sent Kafka Msg to that Student (Pending)
-  */
+        /**
+         *  1. Find All the Transactions
+         *  2. Filter The Transaction with currDate - issueDate is >= due Date if we find
+         *  3. Return the List Of Student Fine Response with Student Name , roll Number, bookName , Fine
+         *  4. Sent Kafka Msg to that Student (Pending)
+         */
         long currentDateMillis = new Date().getTime();
 
         // Example: Filter transactions based on currentDate and maxDay
         List<Transaction> overDueTransactions = transactionRepository.findByTransactionType(TransactionType.ISSUE).stream()
-                .filter(txn -> isOverdue(txn.getCreatedOn() , new Date()))
+                .filter(txn -> isOverdue(txn.getCreatedOn(), new Date()))
                 .collect(Collectors.toList());
 
         // Set fine for each overdue transaction  (Lambda
@@ -179,6 +198,7 @@ public class TransactionService {
 
         return overDueTransactions.stream().map(txn -> ReturnStudentWithOverDueResponse.From(txn)).collect(Collectors.toList());
     }
+
     private boolean isOverdue(Date issueDate, Date returnDate) {
         long timeDiffMillis = returnDate.getTime() - issueDate.getTime();
         long daysPassed = TimeUnit.DAYS.convert(timeDiffMillis, TimeUnit.MILLISECONDS);

@@ -5,6 +5,7 @@ import com.myProject.practice.Digital_Library_Project.Entity.Book;
 import com.myProject.practice.Digital_Library_Project.Entity.Genre;
 import lombok.*;
 
+import java.io.Serializable;
 import java.util.Date;
 
 @Getter
@@ -12,7 +13,7 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ReturnBookResponse {
+public class ReturnBookResponse implements Serializable {
     private String name;
     private String language;
     private Genre genre;

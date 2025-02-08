@@ -37,6 +37,4 @@ public class ReturnTransactionResponse {
                 .updatedOn(transaction.getUpdatedOn())
                 .build();
     }
-
-
 }

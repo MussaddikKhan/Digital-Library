@@ -15,46 +15,51 @@ import java.util.List;
 @Service
 public class BookService {
     @Autowired
-    private  BookRepository bookRepository;
+    private BookRepository bookRepository;
     @Autowired
     private AuthorService authorService;
 
-    public ReturnBookResponse saveBook(CreatedBookRequest createdBookRequest){
-           Book book =   createdBookRequest.to();
-           Author author  =  authorService.createOrGet(book.getAuthor());
-           book.setAuthor(author);
-           bookRepository.save(book);
-          ReturnBookResponse returnBookResponse =  ReturnBookResponse.from(book);
-           return  returnBookResponse;
+    @Autowired
+    BookCacheService bookCacheService;
+
+    public ReturnBookResponse saveBook(CreatedBookRequest createdBookRequest) {
+        Book book = createdBookRequest.to();
+        Author author = authorService.createOrGet(book.getAuthor());
+        book.setAuthor(author);
+        bookRepository.save(book);
+        ReturnBookResponse returnBookResponse = ReturnBookResponse.from(book);
+        return returnBookResponse;
     }
 
-    public  Book getBookById(Integer id){
-        return  bookRepository.findById(id).orElse(null);
+    public Book getBookById(Integer id) {
+        return bookRepository.findById(id).orElse(null);
+
     }
-    public Book getBookByName(String bookName){
-        Book book = bookRepository.getBookByName(bookName);
-        if(book == null) {
-            return null;
+    public Book getBookByName(String bookName) {
+        Book book = bookCacheService.getBookFromCache(bookName);
+        if (book == null) {
+            book = bookRepository.getBookByName(bookName);
+            if (book == null) return null;
+            bookCacheService.setBookInCache(book);
         }
-        else{
-            return book;
-        }
+        return book;
     }
-    public  void updateBookById(Integer id, Student student){
+
+    public void updateBookById(Integer id, Student student) {
         bookRepository.updateBook(id, student);
     }
 
-    public List<Book> getFilteredBooks(String name, String genre, String language, String authorEmail){
+    public List<Book> getFilteredBooks(String name, String genre, String language, String authorEmail) {
         Author author = null;
-        if(authorEmail != null){
-                author = authorService.getAuthor(authorEmail);
-                if(author == null){
-                    try {
-                        throw new AuthorNotFoundException("This Author not Present in DB");
-                    } catch (AuthorNotFoundException e) {
-                        throw new RuntimeException(e);
-                    }
+        if (authorEmail != null) {
+            author = authorService.getAuthor(authorEmail);
+            if (author == null) {
+                try {
+                    throw new AuthorNotFoundException("This Author not Present in DB");
+                } catch (AuthorNotFoundException e) {
+                    throw new RuntimeException(e);
                 }
+            }
         }
         return bookRepository.findBooksByFilters(name, genre, language, author);
     }

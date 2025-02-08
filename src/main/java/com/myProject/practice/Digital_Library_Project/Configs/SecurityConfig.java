@@ -32,7 +32,6 @@ public class SecurityConfig {
     }
 
     // Step 2 : Autherization
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
        return httpSecurity
